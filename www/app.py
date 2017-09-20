@@ -25,7 +25,8 @@ loop = asyncio.get_event_loop()
 loop.run_until_complete(init(loop))
 loop.run_forever()
 
-
+#创建一个全局的链接池，每个HTTP请求都从池中获得数据链接
+#链接池由全局变量__pool存储，缺省情况下将编码设置为utf8，自动提交事务
 @asyncio.coroutine
 def create_pool(loop, **kw):
     logging.info('create database connection pool...')
@@ -41,17 +42,19 @@ def create_pool(loop, **kw):
         maxsize=kw.get('maxsize',10),#池中最多有10个链接对象
         minisize=kw.get('minisize',1),
         loop=loop
-    )
+    ) #创建链接所需要的参数
 
-# 封装SELECT方法
+#单独封装select，其他insert,update,delete一并封装，理由如下：
+#使用Cursor对象执行insert，update，delete语句时，执行结果由rowcount返回影响的行数，就可以拿到执行结果。
+#使用Cursor对象执行select语句时，通过featchall()可以拿到结果集。结果集是一个list，每个元素都是一个tuple，对应一行记录
 @asyncio.coroutine
 def select(sql,args,size=None): #size可以决定取几条
     log(sql, args)
     global __pool
-    with (yield from __pool) as conn:
-        cur=yield from conn.cursor(aiomysql.DictCursor)
+    with (yield from __pool) as conn:#打开pool的方法,或async with __pool.get() as conn:
+        cur=yield from conn.cursor(aiomysql.DictCursor)#创建游标,aiomysql.DictCursor的作用使生成结果是一个dict
         #用参数替换而非字符串拼接可以防止sql注入
-        yield from cur.execute(sql.replace('?','%s'), args or ())
+        yield from cur.execute(sql.replace('?','%s'), args or ()) #执行sql语句，sql语句的占位符是'?',而Mysql的占位符是'%s'
         if size:
             rs=yield from cur.fetchmany(size)
         else:
