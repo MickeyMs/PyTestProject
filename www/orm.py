@@ -44,7 +44,7 @@ async def execute(sql, args, autocommit=True):
     async with __pool.get() as conn:
         if not autocommit:
             await conn.begin()
-        try:https://github.com/michaelliao/awesome-python3-webapp/blob/day-03/www/orm.py
+        try:
             async with conn.cursor(aiomysql.DictCursor) as cur:
                 await cur.execute(sql.replace('?', '%s'), args)
                 affected = cur.rowcount
