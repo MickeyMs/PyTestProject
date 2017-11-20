@@ -16,7 +16,7 @@ from aiohttp import web
 from jinja2 import environment, FileSystemLoader
 
 import orm
-from coroweb import add_routers, add_static
+from coroweb import add_routes, add_static
 
 def init_jinja2(app, **kw):
     logging.info('init jinja2...')
@@ -46,7 +46,7 @@ async def logger_factory(app, handler):
         return (await handler(request))
     return logger
 
-async def data_facotry(app ,handler):
+async def data_facotry(app, handler):
     async def parse_data(request):
         if request.method == 'POST':
             if request.content_type.startswith('application/json'):
@@ -56,7 +56,7 @@ async def data_facotry(app ,handler):
                 request.__data__ = await request.post()
                 logging.info('request form: %s' % str(request.__data__))
         return (await handler(request))
-     return parse_data
+    return parse_data
 
 async def response_factory(app, handler):
     async def response(request):

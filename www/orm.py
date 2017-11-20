@@ -100,7 +100,7 @@ class TextField(Field):
 
 class ModelMetaclass(type):
 
-    def __new__(cls, ,name, bases, attrs):
+    def __new__(cls, name, bases, attrs):
         if name=='Model':
             return type.__new__(cls, name, bases, attrs)
         tableName = attrs.get('__table__', None) or name
@@ -220,7 +220,7 @@ class Model(dict, metaclass=ModelMetaclass):
         args.append(self.getValue(self.__primary_key__))
         rows = await execute(self.__update__, args)
         if rows !=1:
-            logging.warn('failed to update by primary key: affected rows: %s' rows)
+            logging.warn('failed to update by primary key: affected rows: %s' % rows)
     async def remove(self):
         args = [self.getValue(self.__primary_key__)]
         rows = await execute(self.__delete__, args)

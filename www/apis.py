@@ -13,7 +13,7 @@ class APIError(Exception):
     '''
     the base APIError which contains error(required), data(optional)and message(optinal)
     '''
-    def __init__(self error, data='', message=''):
+    def __init__(self, error, data='', message=''):
         super(APIError, self).__init__(message)
         self.error = error
         self.data = data
@@ -23,15 +23,15 @@ class APIValueError(APIError):
     '''
     indicate the input value has error or invalid. The data specifies the error field of input form.
     '''
-    def __init__(self, filed, message='')
-    super(APIValueError, self).__init__('value:invalid', field, message)
+    def __init__(self, field, message=''):
+        super(APIValueError, self).__init__('value:invalid', field, message)
 
 class APIResourceNotFoundError(APIError):
     '''
     Indicate the resource was not found. The data specifies the resource name.
     '''
     def __init__(self, field, message=''):
-        super(APResourceNotFoundError, self).__init__('value:notFound' field, message)
+        super(APIResourceNotFoundError, self).__init__('value:notFound', field, message)
 
 class APIPermissioinError(APIError):
     '''
