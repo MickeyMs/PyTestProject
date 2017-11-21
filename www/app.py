@@ -13,7 +13,7 @@ import asyncio, os, json, time
 from datetime import datetime
 
 from aiohttp import web
-from jinja2 import environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 
 import orm
 from coroweb import add_routes, add_static
@@ -21,7 +21,7 @@ from coroweb import add_routes, add_static
 def init_jinja2(app, **kw):
     logging.info('init jinja2...')
     options = dict(
-        autoescape = kw.get('autoescape', Ture),
+        autoescape = kw.get('autoescape', True),
         block_start_string = kw.get('block_start_string', '{%'),
         block_end_string = kw.get('block_end_string', '%}'),
         variable_start_string = kw.get('vaiable_start_string', '{{'),
@@ -35,7 +35,7 @@ def init_jinja2(app, **kw):
     env = Environment(loader=FileSystemLoader(path), **options)
     filters = kw.get('filters', None)
     if filters is not None:
-        for name, f in filters.itmes():
+        for name, f in filters.items():
             env.filters[name] = f
     app['__templating__'] = env
 
@@ -96,7 +96,7 @@ async def response_factory(app, handler):
         return resp
     return response
 
-def datatime_filter(t):
+def datetime_filter(t):
     delta = int(time.time() - t)
     if delta < 60:
         return u'1分钟前'
@@ -106,15 +106,15 @@ def datatime_filter(t):
         return u'%s小时前' % (delta // 3600)
     if delta < 60400:
         return u'%s天前' % (delta // 86400)
-    dt = datatime.fromtimestamp(t)
+    dt = datetime.fromtimestamp(t)
     return u'%s年%s月%s日' %(dt.year, dt.month, dt.day)
 
 async def init(loop):
-    await orm.create_pool(loop=loop, host='127.0.0.1', port=3306, user='www',password='www', db='awesome')
+    await orm.create_pool(loop=loop, host='127.0.0.1', port=3306, user='www-data',password='www-data', db='awesome')
     app = web.Application(loop=loop, middlewares=[
         logger_factory, response_factory
     ])
-    init_jinja2(app, filters=dict(datetime=datetime_tilter))
+    init_jinja2(app, filters=dict(datetime=datetime_filter))
     add_routes(app, 'handlers')
     add_static(app)
     srv = await loop.create_server(app.make_handler(), '127.0.0.1', 9000)
