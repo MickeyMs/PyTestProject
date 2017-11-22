@@ -29,16 +29,15 @@ class Dict(dict):
 
 def merge(defaults, override):
     r = {}
-    for k, v in defauts.items():
-        if k in overide:
+    for k, v in defaults.items():
+        if k in override:
             if isinstance(v, dict):
                 r[k] = merge(v, override[k])
             else:
-                r[k] == override[k]
+                r[k] = override[k]
         else:
             r[k] = v
     return r
-
 
 def toDict(d):
     D = Dict()

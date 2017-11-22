@@ -66,7 +66,7 @@ async def response_factory(app, handler):
             return r
         if isinstance(r, bytes):
             resp = web.Response(body=r)
-            rese.content_type = 'application/octet-stream'
+            resp.content_type = 'application/octet-stream'
             return resp
         if isinstance(r, str):
             if r.startswith('redirect:'):
@@ -110,7 +110,7 @@ def datetime_filter(t):
     return u'%s年%s月%s日' %(dt.year, dt.month, dt.day)
 
 async def init(loop):
-    await orm.create_pool(loop=loop, host='127.0.0.1', port=3306, user='www-data',password='www-data', db='awesome')
+    await orm.create_pool(loop=loop, host='127.0.0.1', port=3306, user='root',password='root', db='awesome')
     app = web.Application(loop=loop, middlewares=[
         logger_factory, response_factory
     ])
