@@ -100,7 +100,7 @@ class RequestHandLer(object):
                     if not isinstance(params, dict):
                         return web.HTTPBadRequest('JSON body must be object.')
                     kw = params
-                elif ct.startswith('application/x-www-form-urlendcoded') or ct.startswith('multipart/form-data'):
+                elif ct.startswith('application/x-www-form-urlencoded') or ct.startswith('multipart/form-data'):
                     parmas = await request.post()
                     kw = dict(**params)
                 else:
@@ -117,7 +117,7 @@ class RequestHandLer(object):
             if not self._has_var_kw_arg and self._named_kw_args:
                 # remove all unamed kw:
                 copy = dict()
-                for name in self._named.kw_args:
+                for name in self._named_kw_args:
                     if name in kw:
                         copy[name] = kw[name]
                 kw = copy
