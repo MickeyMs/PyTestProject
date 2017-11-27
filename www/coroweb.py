@@ -74,10 +74,10 @@ def has_request_arg(fn):
             found = True
             continue
         if found and (param.kind != inspect.Parameter.VAR_POSITIONAL and param.kind != inspect.Parameter.KEYWORD_ONLY and param.kind != inspect.Parameter.VAR_KEYWORD):
-            raise ValueError('request parameter must be the last named parameter in function:%s%s' % (fn.__name__, str(sig)))
+            raise ValueError('request parameter must be the last named parameter in function: %s%s' % (fn.__name__, str(sig)))
     return found
 
-class RequestHandLer(object):
+class RequestHandler(object):
 
     def __init__(self, app, fn):
         self._app = app
@@ -95,21 +95,21 @@ class RequestHandLer(object):
                 if not request.content_type:
                     return web.HTTPBadRequest('Missing Content-Type.')
                 ct = request.content_type.lower()
-                if ct.strtswith('application/json'):
+                if ct.startswith('application/json'):
                     params = await request.json()
                     if not isinstance(params, dict):
                         return web.HTTPBadRequest('JSON body must be object.')
                     kw = params
                 elif ct.startswith('application/x-www-form-urlencoded') or ct.startswith('multipart/form-data'):
-                    parmas = await request.post()
+                    params = await request.post()
                     kw = dict(**params)
                 else:
-                    return web.HTTPBadRequest('Unsupported Content-type: %s' % request.content_type)
+                    return web.HTTPBadRequest('Unsupported Content-Type: %s' % request.content_type)
             if request.method == 'GET':
                 qs = request.query_string
                 if qs:
                     kw = dict()
-                    for k, v in parse.parse_qs(qs, True).item():
+                    for k, v in parse.parse_qs(qs, True).items():
                         kw[k] = v[0]
         if kw is None:
             kw = dict(**request.match_info)
@@ -123,7 +123,7 @@ class RequestHandLer(object):
                 kw = copy
             # check named arg:
             for k, v in request.match_info.items():
-                if kw in kw:
+                if k in kw:
                     logging.warning('Duplicate arg name in named arg and kw args: %s' % k)
                 kw[k] = v
         if self._has_request_arg:
@@ -133,7 +133,7 @@ class RequestHandLer(object):
             for name in self._required_kw_args:
                 if not name in kw:
                     return web.HTTPBadRequest('Missing argument: %s' % name)
-        logging.info('call wsith args: %s' % str(kw))
+        logging.info('call with args: %s' % str(kw))
         try:
             r = await self._func(**kw)
             return r
@@ -150,9 +150,9 @@ def add_route(app, fn):
     path = getattr(fn, '__route__', None)
     if path is None or method is None:
         raise ValueError('@get or @post not defined in %s.' % str(fn))
-    if not asyncio.iscoroutinefunction(fn) and not inspect.isgeneraatirfunction(fn):
+    if not asyncio.iscoroutinefunction(fn) and not inspect.isgeneratorfunction(fn):
         fn = asyncio.coroutine(fn)
-    logging.info('add route %s %s => %s(%s)' %(method, path, fn.__name__, ','.join(inspect.signature(fn).parameters.keys())))
+    logging.info('add route %s %s => %s(%s)' % (method, path, fn.__name__, ', '.join(inspect.signature(fn).parameters.keys())))
     app.router.add_route(method, path, RequestHandler(app, fn))
 
 def add_routes(app, module_name):
