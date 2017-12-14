@@ -11,12 +11,11 @@ import json, logging, inspect, functools
 
 class Page(object):
     '''
-    Page objecct for display pages
+    Page object for display pages。
     '''
-
     def __init__(self, item_count, page_index=1, page_size=10):
         '''
-        Init Pagination by item_count, page_index and page_size
+        Init Pagination by item_count, page_index and page_size。
 
         >>> p1 = Page(100, 1)
         >>> p1.page_count
@@ -55,13 +54,13 @@ class Page(object):
         self.has_previous = self.page_index > 1
 
     def __str__(self):
-        return 'item_count: %s, page_count: %s, page_index: %s, page_size: %s, limit: %s' % (self.item_count, self.page_count, self.page_index, self.page_size, self.offset, self.limit)
+        return 'item_count: %s, page_count: %s, page_index: %s, page_size: %s, offset: %s, limit: %s' % (self.item_count, self.page_count, self.page_index, self.page_size, self.offset, self.limit)
     
     __repr__ = __str__
 
 class APIError(Exception):
     '''
-    the base APIError which contains error(required), data(optional) and message(optional)
+    the base APIError which contains error(required), data(optional) and message(optional).
     '''
     def __init__(self, error, data='', message=''):
         super(APIError, self).__init__(message)
@@ -71,7 +70,7 @@ class APIError(Exception):
 
 class APIValueError(APIError):
     '''
-    indicate the input value has error or invalid. The data specifies the error field of input form.
+    Indicate the input value has error or invalid. The data specifies the error field of input form.
     '''
     def __init__(self, field, message=''):
         super(APIValueError, self).__init__('value:invalid', field, message)
