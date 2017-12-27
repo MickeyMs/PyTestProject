@@ -16,3 +16,4 @@ launch.json
 # My configurations:
 db.ini
 deploy_key_rsa
+.vscode/settings.json
