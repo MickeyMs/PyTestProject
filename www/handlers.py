@@ -196,7 +196,7 @@ async def api_comments(*, page='1'):
     if num == 0:
         return dict(page=p, comments=())
     comments = await Comment.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
-    return dict(page=p,comments=comments)
+    return dict(page=p, comments=comments)
 
 @post('/api/blogs/{id}/comments')
 async def api_create_comment(id, request, *, content):
@@ -208,14 +208,14 @@ async def api_create_comment(id, request, *, content):
     blog = await Blog.find(id)
     if blog is None:
         raise APIResourceNotFoundError('Blog')
-    comment = Comment(blog_id=blog.id, user_id=user.id, user_name=user.name,, user_image=user.image, content=content.strip())
+    comment = Comment(blog_id=blog.id, user_id=user.id, user_name=user.name, user_image=user.image, content=content.strip())
     await comment.save()
     return Comment
 
-@post('/api/comment/{id}/delete')
+@post('/api/comments/{id}/delete')
 async api_delete_comments(id, request):
     check_admin(request)
-    c = await Coment.find(id)
+    c = await Comment.find(id)
     if c is None:
         raise APIResourceNotFoundError('Comment')
     await c.remove()
@@ -291,7 +291,7 @@ async def api_create_blog(request, *, name, summary, content):
 async def api_update_blog(id, request, *, name, summary, content):
     check_admin(request)
     blog = await Blog.find(id)
-    if not name or not name.stip():
+    if not name or not name.strip():
         raise APIValueError('name', 'name cannot be empty.')
     if not summary or not summary.strip():
         raise APIValueError('summary', 'summary cannot be empty.')
@@ -301,7 +301,7 @@ async def api_update_blog(id, request, *, name, summary, content):
     blog.summary = summary.strip()
     blog.content = content.strip()
     await blog.update()
-    return Blog
+    return blog
 
 @post('/api/blogs/{id}/delete')
 async def api_delete_blog(request, *, id):
