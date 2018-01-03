@@ -2,6 +2,24 @@
 
 {% block title %}日志{% endblock %}
 
+{% block beforehead %}
+
+<script>
+$(function() {
+    getJSON('/api/blogs', {
+        page: {{ page_index }}
+    }, function (err, results) {
+        if (err) {
+            return fatal(err);
+        }
+        $('#loading').hide();
+        initVM(results);
+    });
+});
+</script>
+
+{% endblock %}
+
 {% block content %}
 
     <div class="uk-width-medium-3-4">
