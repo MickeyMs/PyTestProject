@@ -213,7 +213,7 @@ async def api_create_comment(id, request, *, content):
     return Comment
 
 @post('/api/comments/{id}/delete')
-async api_delete_comments(id, request):
+async def api_delete_comments(id, request):
     check_admin(request)
     c = await Comment.find(id)
     if c is None:
