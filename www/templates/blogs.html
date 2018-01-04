@@ -4,20 +4,6 @@
 
 {% block beforehead %}
 
-<script>
-$(function() {
-    getJSON('/api/blogs', {
-        page: {{ page_index }}
-    }, function (err, results) {
-        if (err) {
-            return fatal(err);
-        }
-        $('#loading').hide();
-        initVM(results);
-    });
-});
-</script>
-
 {% endblock %}
 
 {% block content %}

@@ -210,7 +210,7 @@ async def api_create_comment(id, request, *, content):
         raise APIResourceNotFoundError('Blog')
     comment = Comment(blog_id=blog.id, user_id=user.id, user_name=user.name, user_image=user.image, content=content.strip())
     await comment.save()
-    return Comment
+    return comment
 
 @post('/api/comments/{id}/delete')
 async def api_delete_comments(id, request):
