@@ -43,13 +43,17 @@ def init_jinja2(app, **kw):
             env.filters[name] = f
     app['__templating__'] = env
 
+# 日志处理工厂
 async def logger_factory(app, handler):
     async def logger(request):
-        logging.info('Request: %s %s' % (request.method, request.path))
+        dt = datetime.fromtimestamp(time.time())
+        logging.info(u'=======New Request %s:%s:%s %s:%s:%s=========' % (dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second))
+        logging.info('Request: %s %s %s' % (request.method, request.path, request.url))
         # await asyncio.sleep(0.3)
         return (await handler(request))
     return logger
 
+# 用户信息处理工厂
 async def auth_factory(app, handler):
     async def auth(request):
         logging.info('check user: %s %s' % (request.method, request.path))
@@ -65,7 +69,7 @@ async def auth_factory(app, handler):
         return (await handler(request))
     return auth
 
-
+# 数据处理工厂
 async def data_factory(app, handler):
     async def parse_data(request):
         if request.method == 'POST':
@@ -78,6 +82,7 @@ async def data_factory(app, handler):
         return (await handler(request))
     return parse_data
 
+# 响应处理工厂
 async def response_factory(app, handler):
     async def response(request):
         logging.info('Response handler...')
@@ -105,8 +110,8 @@ async def response_factory(app, handler):
                 resp = web.Response(body=app['__templating__'].get_template(template).render(**r).encode('utf-8'))
                 resp.content_type = 'text/html;charset=utf-8'
                 return resp
-        if isinstance(r, int) and t >= 100 and t < 600:
-            return web.Response(t)
+        if isinstance(r, int) and  r >= 100 and r < 600:
+            return web.Response(r)
         if isinstance(r, tuple) and len(r) == 2:
             t, m = r
             if isinstance(t, int) and t >= 100 and t < 600:
@@ -117,6 +122,7 @@ async def response_factory(app, handler):
         return resp
     return response
 
+# 时间处理器
 def datetime_filter(t):
     delta = int(time.time() - t)
     if delta < 60:
