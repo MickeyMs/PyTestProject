@@ -37,6 +37,8 @@ def post(path):
         return wrapper
     return decorator
 
+# 引用inspect模块，创建几个函数以获取URL处理函数与request参数之间的关系
+# 收集没有默认值的关键字参数
 def get_required_kw_args(fn):
     args = []
     params = inspect.signature(fn).parameters
@@ -45,6 +47,7 @@ def get_required_kw_args(fn):
             args.append(name)
     return tuple(args)
 
+# 获取命名关键字参数
 def get_named_kw_args(fn):
     args = []
     params = inspect.signature(fn).parameters
@@ -53,18 +56,21 @@ def get_named_kw_args(fn):
             args.append(name)
     return tuple(args)
 
+# 判断有没有命名关键字参数
 def has_named_kw_args(fn):
     params = inspect.signature(fn).parameters
     for name, param in params.items():
         if param.kind == inspect.Parameter.KEYWORD_ONLY:
             return True
 
+# 判断有没有关键字参数
 def has_var_kw_arg(fn):
     params = inspect.signature(fn).parameters
     for name, param in params.items():
         if param.kind == inspect.Parameter.VAR_KEYWORD:
             return True
 
+# 判断是否含有叫request的参数，且该参数是否为最后一个参数
 def has_request_arg(fn):
     sig = inspect.signature(fn)
     params = sig.parameters
@@ -77,6 +83,7 @@ def has_request_arg(fn):
             raise ValueError('request parameter must be the last named parameter in function: %s%s' % (fn.__name__, str(sig)))
     return found
 
+# 从URL函数中分析需要接收的参数，从request中获取必要的参数，调用RUL函数，然后把结果转换为web。Response
 class RequestHandler(object):
 
     def __init__(self, app, fn):
@@ -87,24 +94,24 @@ class RequestHandler(object):
         self._has_named_kw_args = has_named_kw_args(fn)
         self._named_kw_args = get_named_kw_args(fn)
         self._required_kw_args = get_required_kw_args(fn)
-
+    # 实现直接在实例本身上调用
     async def __call__(self, request):
         kw = None
         if self._has_var_kw_arg or self._has_named_kw_args or self._required_kw_args:
             if request.method == 'POST':
                 if not request.content_type:
-                    return web.HTTPBadRequest('Missing Content-Type.')
+                    return web.HTTPBadRequest(text='Missing Content-Type.')
                 ct = request.content_type.lower()
                 if ct.startswith('application/json'):
                     params = await request.json()
                     if not isinstance(params, dict):
-                        return web.HTTPBadRequest('JSON body must be object.')
+                        return web.HTTPBadRequest(text='JSON body must be object.')
                     kw = params
                 elif ct.startswith('application/x-www-form-urlencoded') or ct.startswith('multipart/form-data'):
                     params = await request.post()
                     kw = dict(**params)
                 else:
-                    return web.HTTPBadRequest('Unsupported Content-Type: %s' % request.content_type)
+                    return web.HTTPBadRequest(text='Unsupported Content-Type: %s' % request.content_type)
             if request.method == 'GET':
                 qs = request.query_string
                 if qs:
@@ -114,6 +121,7 @@ class RequestHandler(object):
         if kw is None:
             kw = dict(**request.match_info)
         else:
+            # 当函数参数没有关键字参数时，剔除request除去命名关键字参数所有的参数信息
             if not self._has_var_kw_arg and self._named_kw_args:
                 # remove all unamed kw:
                 copy = dict()
@@ -132,7 +140,7 @@ class RequestHandler(object):
         if self._required_kw_args:
             for name in self._required_kw_args:
                 if not name in kw:
-                    return web.HTTPBadRequest('Missing argument: %s' % name)
+                    return web.HTTPBadRequest(text='Missing argument: %s' % name)
         logging.info('call with args: %s' % str(kw))
         try:
             r = await self._func(**kw)
@@ -140,11 +148,13 @@ class RequestHandler(object):
         except APIError as e:
             return dict(error=e.error, data=e.data, message=e.message)
 
+# 添加静态文件夹的路径
 def add_static(app):
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
     app.router.add_static('/static/', path)
     logging.info('add static %s => %s' % ('/static/', path))
 
+# 编写函数用来一个URL处理函数
 def add_route(app, fn):
     method = getattr(fn, '__method__', None)
     path = getattr(fn, '__route__', None)
@@ -155,6 +165,7 @@ def add_route(app, fn):
     logging.info('add route %s %s => %s(%s)' % (method, path, fn.__name__, ', '.join(inspect.signature(fn).parameters.keys())))
     app.router.add_route(method, path, RequestHandler(app, fn))
 
+# 批量注册URL函数
 def add_routes(app, module_name):
     n = module_name.rfind('.')
     if n == (-1):
