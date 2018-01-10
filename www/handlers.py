@@ -12,7 +12,7 @@ import markdown2
 from aiohttp import web
 
 from coroweb import get, post
-from apis import Page, APIValueError, APIResourceNotFoundError
+from apis import Page, APIError, APIValueError, APIResourceNotFoundError, APIPermissionError
 
 from models import User, Comment, Blog, next_id
 from config import configs
@@ -20,10 +20,12 @@ from config import configs
 COOKIE_NAME = 'awesession'
 _COOKIE_KEY = configs.session.secret
 
+# 验证管理员
 def check_admin(request):
     if request.__user__ is None or not request.__user__.admin:
         raise APIPermissionError()
 
+# 页码
 def get_page_index(page_str):
     p = 1
     try:
@@ -34,6 +36,7 @@ def get_page_index(page_str):
         p = 1
     return p
 
+# 计算加载cookie
 def user2cookie(user, max_age):
     '''
     Generate cookie str by user.
@@ -48,6 +51,7 @@ def text2html(text):
     lines = map(lambda s: '<p>%s</p>' % s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'), filter(lambda s: s.strip() != '', text.split('\n')))
     return ''.join(lines)
 
+# 解析cookie
 async def cookie2user(cookie_str):
     '''
     Parse cookie and load user if cookie is valid.
@@ -75,22 +79,23 @@ async def cookie2user(cookie_str):
         return None
 
 @get('/')
-async def index(*, page='1'):
+async def index(request, *, page='1'):
     page_index = get_page_index(page)
     num = await Blog.findNumber('count(id)')
-    page = Page(num)
-    if num == 0:
+    page = Page(num, page_index)
+    if page == 0:
         blogs = []
     else:
         blogs = await Blog.findAll(orderBy='created_at desc', limit=(page.offset, page.limit))
     return {
         '__template__': 'blogs.html',
         'page': page,
-        'blogs': blogs
+        'blogs': blogs,
+        '__user__': request.__user__
     }
 
 @get('/blog/{id}')
-async def get_blog(id):
+async def get_blog(id, request):
     blog = await Blog.find(id)
     comments = await Comment.findAll('blog_id=?', [id], orderBy='created_at desc')
     for c in comments:
@@ -99,21 +104,25 @@ async def get_blog(id):
     return {
         '__template__': 'blog.html',
         'blog': blog,
-        'comments': comments
+        'comments': comments,
+        '__user__': request.__user__
     }
 
+# 注册入口
 @get('/register')
 def register():
     return {
         '__template__': 'register.html'
     }
 
+# 登录入口
 @get('/signin')
 def signin():
     return {
         '__template__': 'signin.html'
     }
 
+# 登录处理
 @post('/api/authenticate')
 async def authenticate(*, email, passwd):
     if not email:
@@ -139,6 +148,7 @@ async def authenticate(*, email, passwd):
     r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
     return r
 
+# 登出
 @get('/signout')
 def signout(request):
     referer = request.headers.get('Referer')
@@ -147,22 +157,27 @@ def signout(request):
     logging.info('user signed out.')
     return r
 
+# 管理
 @get('/manage/')
 def manage():
     return 'redirect:/manage/comments'
 
+# 管理评论
 @get('/manage/comments')
-def manage_comments(*, page='1'):
+def manage_comments(request, *, page='1'):
     return {
         '__template__': 'manage_comments.html',
-        'page_index': get_page_index(page)
+        'page_index': get_page_index(page),
+        '__user__' : request.__user__
     }
 
+# 管理日志
 @get('/manage/blogs')
-def manage_blogs(*, page='1'):
+def manage_blogs(request, *, page='1'):
     return {
         '__template__': 'manage_blogs.html',
-        'page_index': get_page_index(page)
+        'page_index': get_page_index(page),
+        '__user__' : request.__user__
     }
 
 @get('/manage/blogs/create')
@@ -170,22 +185,26 @@ def manage_create_blog():
     return {
         '__template__': 'manage_blog_edit.html',
         'id': '',
-        'action': '/api/blogs'
+        'action': '/api/blogs',
+        '__user__' : request.__user__
     }
 
 @get('/manage/blogs/edit')
-def manage_edit_blog(*, id):
+def manage_edit_blog(request, *, id):
     return {
         '__template__': 'manage_blog_edit.html',
         'id': id,
-        'action': '/api/blogs/%s' % id
+        'action': '/api/blogs/%s' % id,
+        '__user__' : request.__user__
     }
 
+# 管理已注册用户
 @get('/manage/users')
-def manage_users(*, page='1'):
+def manage_users(request, *, page='1'):
     return {
         '__template__': 'manage_users.html',
-        'page_index': get_page_index(page)
+        'page_index': get_page_index(page)，
+        '__user__' : request.__user__
     }
 
 @get('/api/comments')
@@ -236,6 +255,7 @@ async def api_get_users(*, page='1'):
 _RE_EMAIL = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
 _RE_SHA1 = re.compile(r'^[0-9a-f]{40}$')
 
+# 注册处理
 @post('/api/users')
 async def api_register_user(*, email, name, passwd):
     if not name or not name.strip():
@@ -265,7 +285,7 @@ async def api_blogs(*, page='1'):
     num = await Blog.findNumber('count(id)')
     p = Page(num, page_index)
     if num == 0:
-        return dict(page=p, blogs=())
+        return dict(page=0, blogs={})
     blogs = await Blog.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
     return dict(page=p, blogs=blogs)
 
