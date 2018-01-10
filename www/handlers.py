@@ -203,7 +203,7 @@ def manage_edit_blog(request, *, id):
 def manage_users(request, *, page='1'):
     return {
         '__template__': 'manage_users.html',
-        'page_index': get_page_index(page)，
+        'page_index': get_page_index(page),
         '__user__' : request.__user__
     }
 
