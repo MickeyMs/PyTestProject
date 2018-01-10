@@ -14,7 +14,7 @@ class Page(object):
     Page object for display pages.
     '''
 
-    def __init__(self, item_count, page_index=1, page_size=3):
+    def __init__(self, item_count, page_index=1, page_size=5):
         '''
         Init Pagination by item_count, page_index and page_size.
 
@@ -53,6 +53,7 @@ class Page(object):
             self.limit = self.page_size
         self.has_next = self.page_index < self.page_count
         self.has_previous = self.page_index > 1
+        print('item_count: %s, page_count: %s, page_index: %s, page_size: %s, offset: %s, limit: %s' % (self.item_count, self.page_count, self.page_index, self.page_size, self.offset, self.limit))
 
     def __str__(self):
         return 'item_count: %s, page_count: %s, page_index: %s, page_size: %s, offset: %s, limit: %s' % (self.item_count, self.page_count, self.page_index, self.page_size, self.offset, self.limit)
