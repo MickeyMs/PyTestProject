@@ -186,7 +186,7 @@ def manage_create_blog():
         '__template__': 'manage_blog_edit.html',
         'id': '',
         'action': '/api/blogs',
-        '__user__' : request.__user__
+        # '__user__' : request.__user__ #添加此行后，在管理页面中新建日志报500 internal servererror
     }
 
 @get('/manage/blogs/edit')
